@@ -87,35 +87,46 @@ d)
   
 e) 
 ```{r}
+norm_vec <- function(x) sqrt(sum(x^2))
+#function to fins l2 norm
 set.seed(1234567)
 x = runif(1000)
 eps = rnorm(1000)
 y = 5 + 10*x + eps
 model <- y~x
-
-# nablaRSS <- function(b) c(-2 * sum(Sales - b[1] - b[2] * TV), -2 * sum((Sales - b[1] - b[2] * TV) * TV))
-# bn <- c(0, 0)
-# gamma <- 0.0000001 # step size parameter
-# kmax <- 1000000 ; for (k in 0:kmax) {
-# bnp1 <- bn - gamma * nablaRSS(bn)
-# if (k %% 100000 == 0)
-# { cat("b: ",bnp1, " -- RSS: ", RSS(bnp1[1], bnp1[2]), \n") }
-# bn <- bnp1
-# }
-
-#Gradient Descent 
 RSS <- function(b) c(-2 * sum(y - b[1] - b[2] * x), -2 * sum((y - b[1] - b[2] * x) * x))
 bn <- c(0,0)
 gamma <- 0.00001
 kmax <- 1000000
+
 for (k in 0:kmax) {
-   bnp1 <- bn - gamma * RSS(bn)
-   bn <- bnp1
+  bnp1 <- bn - gamma*RSS(bn)
+  y_new = bnp1[1]+bnp1[2]*x
+  score = c(sum(y_new),-500+0.5*sum(y_new^2))
+  #Since it comes from a standard normal
+  #Is this the correct score function because it never reaches below 0.00001
+  if(norm_vec(score) < 0.00001){
+    cat("b: ", bnp1, "-- RSS:", RSS(c(bnp1[1],bnp1[2])),"\n","Iterations:",k,"\n")
+    break
+    }
+  bn <- bnp1
 }
-```
-
+#alpha from minimisation
+bnp1[1]+bnp1[2]*mean(x)
+#Using the closed form formula in c) we find alpha
+mean(y)
+#Finding beta
+bnp1[2]
+sum(((y-mean(y))*(x-mean(x)))/(sum(x-mean(x))))
+#We can see that alpha has the same value hoever for beta we achieve a very different value
+#1000000 iterations were required
+'''
 f)
-
+```{r}
+plot(x,y)
+lm = lm(y~x)
+abline(lm, col = "red")
+```
 g)
   
 ## Question 2
