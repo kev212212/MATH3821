@@ -87,36 +87,81 @@ d)
   
 e) 
 ```{r}
+norm_vec <- function(x) sqrt(sum(x^2))
+#function to fins l2 norm
 set.seed(1234567)
 x = runif(1000)
 eps = rnorm(1000)
 y = 5 + 10*x + eps
 model <- y~x
-
-# nablaRSS <- function(b) c(-2 * sum(Sales - b[1] - b[2] * TV), -2 * sum((Sales - b[1] - b[2] * TV) * TV))
-# bn <- c(0, 0)
-# gamma <- 0.0000001 # step size parameter
-# kmax <- 1000000 ; for (k in 0:kmax) {
-# bnp1 <- bn - gamma * nablaRSS(bn)
-# if (k %% 100000 == 0)
-# { cat("b: ",bnp1, " -- RSS: ", RSS(bnp1[1], bnp1[2]), \n") }
-# bn <- bnp1
-# }
-
-#Gradient Descent 
 RSS <- function(b) c(-2 * sum(y - b[1] - b[2] * x), -2 * sum((y - b[1] - b[2] * x) * x))
 bn <- c(0,0)
 gamma <- 0.00001
-kmax <- 1000000
+kmax <- 100000
+
+func1 = function(x){prod((1/sqrt(var(x))*sqrt(2*pi))*exp(-0.5*((x-mean(x))/sqrt(var(x)))))}
+#Use CLT to approximate a normal distribution
 for (k in 0:kmax) {
-   bnp1 <- bn - gamma * RSS(bn)
-   bn <- bnp1
+  bnp1 <- bn - gamma*RSS(bn)
+  #finding score to use for convergence
+  #Is this the correct score function because it never reaches below 0.00001
+  if(norm_vec(bnp1-bn) <= 0.00001){
+    cat("b: ", bnp1, "-- RSS:", RSS(c(bnp1[1],bnp1[2])),"\n","Iterations:",k,"\n")
+    break
+    }
+  bn <- bnp1
 }
-```
+#alpha from minimisation
+bnp1[1]+bnp1[2]*mean(x)
+#Using the closed form formula in c) we find alpha
+mean(y)
+#Finding beta
+bnp1[2]
+sum(((y-mean(y))*(x-mean(x)))/(sum((x-mean(x))^2)))
+#We can see that alpha has the same value as does the beta
+#about 5349 iterations were required 
+'''
 
 f)
+'''{r}
+plot(x,y)
+lm = lm(y~x)
+abline(lm, col = "red")
+'''
 
 g)
+'''{r}
+U.vec <- rep(1,2)
+beta.vec <- c(0,0)
+X <- as.matrix(cbind(rep(1,1000),x))
+Y <- as.matrix(y)
+iter = 0
+
+while(norm_vec(U.vec) > 0.00001) {
+  iter= iter +1
+  eta.vec <- X %*% beta.vec
+  Lambda.eta <- as.vector(plogis(eta.vec))
+  W =  diag(Lambda.eta*(1-Lambda.eta))
+  U.vec <- t(X) %*% (Y - Lambda.eta)
+  I <- t(X) %*% W %*% X
+  beta.vec <- beta.vec + solve(I) %*% U.vec
+}
+print(beta.vec)
+print(iter)
+
+#alpha from NR
+beta.vec[1]+beta.vec[2]*mean(x)
+#Using the closed form formula in c) we find alpha
+mean(y)
+#Finding beta
+beta.vec[2]
+sum(((y-mean(y))*(x-mean(x)))/(sum((x-mean(x))^2)))
+#We can see that velues are wildly different
+#3 iterations were required
+#I cant get this part to work need to think of new method of getting hessian
+'''
+
+
   
 ## Question 2
 Given \textit{n} independent binary random variables $Y_1 \cdots Y_n$ with
