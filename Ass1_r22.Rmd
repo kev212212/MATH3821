@@ -92,31 +92,92 @@ x = runif(1000)
 eps = rnorm(1000)
 y = 5 + 10*x + eps
 model <- y~x
-
-# nablaRSS <- function(b) c(-2 * sum(Sales - b[1] - b[2] * TV), -2 * sum((Sales - b[1] - b[2] * TV) * TV))
-# bn <- c(0, 0)
-# gamma <- 0.0000001 # step size parameter
-# kmax <- 1000000 ; for (k in 0:kmax) {
-# bnp1 <- bn - gamma * nablaRSS(bn)
-# if (k %% 100000 == 0)
-# { cat("b: ",bnp1, " -- RSS: ", RSS(bnp1[1], bnp1[2]), \n") }
-# bn <- bnp1
-# }
-
-#Gradient Descent 
 RSS <- function(b) c(-2 * sum(y - b[1] - b[2] * x), -2 * sum((y - b[1] - b[2] * x) * x))
+#This function gives us the gradient of the RSS
 bn <- c(0,0)
 gamma <- 0.00001
-kmax <- 1000000
+kmax <- 100000
+
 for (k in 0:kmax) {
-   bnp1 <- bn - gamma * RSS(bn)
-   bn <- bnp1
+  bnp1 <- bn - gamma*RSS(bn)
+  if(sum(RSS(bn)^2) <= 0.00001){
+    cat("b: ", bnp1, "-- RSS:", RSS(c(bnp1[1],bnp1[2])),"\n","Iterations:",k,"\n")
+    break
+    }
+  bn <- bnp1
 }
-```
+#This algorithm starts at b0 = 0 and b1 = 0 which is the same as alpha = 0 and b1 = 0
+#I get the l2 norm of score since the RSS function gives the gradient which is the score
+#thus the sum of squares of gradient (RSS) must b less than 0.00001
+#alpha from minimisation
+bnp1[1]+bnp1[2]*mean(x)
+#Using the closed form formula in c) we find alpha
+mean(y)
+#Finding beta
+bnp1[2]
+sum(((y-mean(y))*(x-mean(x)))/(sum((x-mean(x))^2)))
+#We can see that alpha has the same value as does the beta
+#about 9943 iterations were required 
+#Below is my working to find the gradient function for the RSS
+'''
+To get the gradient of the RSS we must get the first derivative of:\\
+\begin{align*}
+    S(\beta_1,\beta_2) &= \sum_{i=1}^n(y_i-\beta_1-\beta_2x_i)^2\\
+    S'(\beta_1,\beta_2) &= (-2\sum_{i=1}^n(y_i-\beta_1-\beta_2x_i),-2\sum_{i=1}^nx_i(y_i-\beta_1-\beta_2x_i))\\
+\end{align*}
+
 
 f)
+'''{r}
+plot(x,y)
+lm = lm(y~x)
+abline(lm, col = "red")
+abline(bnp1[1],bnp1[2], col = 'blue')
+legend(0,16,legend=c("linear model", "gradient descent method"),
+       col=c("red", "blue"), lty=1:2, cex=0.8)
+'''
 
 g)
+'''{r}
+beta = c(0,0)
+imax = 100000
+RSShess = function(b)cbind(c(2*length(x), 2*sum(x)),c(2*sum(x),2*sum(x^2)))
+#This function gives us the hessian matrix for the RSS
+
+for (i in 0:imax) {
+  beta1 <- beta - solve(RSShess(beta))%*%RSS(beta)
+  if(sum(RSS(beta)^2) <= 0.00001){
+    cat("beta: ", beta1, "-- RSS:", RSS(c(beta1[1],beta1[2])),"\n","Iterations:",i,"\n")
+    break
+  }
+  beta <- beta1
+}
+
+#alpha from NR
+beta1[1]+beta1[2]*mean(x)
+#Using the closed form formula in c) we find alpha
+mean(y)
+#Finding beta
+beta1[2]
+sum(((y-mean(y))*(x-mean(x)))/(sum((x-mean(x))^2)))
+#We can see that values are the same 
+#1 iterations was required
+#It took alot less iterations than the gradient descent method
+#This could be due to the fact that the Newton-raphson method
+#accounts for the curvature of the loglikelihood and as such should need less iterations
+#Below is my working to find the hessian matrix for the RSS
+'''
+To get the Hessian matrix of the RSS we need to further derive the gradient found in Question 1e with respect to $\beta_1$ and $\beta_2$.\\
+\begin{align*}
+    S'(\beta_1,\beta_2) &= (-2\sum_{i=1}^n(y_i-\beta_1-\beta_2x_i),-2\sum_{i=1}^nx_i(y_i-\beta_1-\beta_2x_i))\\
+    \frac{\partial^2S(\beta_1,\beta_2)}{\partial\beta_1^2} &= 2\sum_{i=1}^n1\\
+    &= 2n\\
+    \frac{\partial^2S(\beta_1,\beta_2)}{\partial\beta_2^2} &= 2\sum_{i=1}^nx_ix_i\\
+    &= 2\sum_{i=1}^nx_i^2\\
+    \frac{\partial^2S(\beta_1,\beta_2)}{\partial\beta_1\partial\beta_2} &= 2\sum_{i=1}^nx_i
+    &= \frac{\partial^2S(\beta_1,\beta_2)}{\partial\beta_2\partial\beta_1}\\
+\end{align*}
+
   
 ## Question 2
 Given \textit{n} independent binary random variables $Y_1 \cdots Y_n$ with
